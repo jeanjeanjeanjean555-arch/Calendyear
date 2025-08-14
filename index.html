@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Calendyear</title>
+<style>
+  body { font-family: Arial, sans-serif; background: #111; color: white; margin:0; padding:0; }
+  #login, #main { padding: 20px; max-width: 800px; margin: auto; }
+  #login { text-align: center; margin-top: 100px; }
+  input, button { font-size: 1.2em; padding: 10px; margin: 10px 0; }
+  #error { color: #f55; }
+
+  #title { font-size: 4em; text-align: center; margin: 20px 0; }
+
+  #menu { display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; margin-bottom: 30px; }
+  .month-button {
+    flex: 1 1 120px;
+    height: 120px;
+    border-radius: 12px;
+    cursor: pointer;
+    color: white;
+    font-weight: bold;
+    font-size: 1.1em;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 0 8px #222;
+    transition: background-color 0.3s ease;
+    position: relative;
+  }
+  .month-button img {
+    max-height: 50px;
+    margin-bottom: 6px;
+    border-radius: 6px;
+    box-shadow: 0 0 4px black;
+  }
+
+  #enigme {
+    background: #222;
+    border-radius: 10px;
+    padding: 20px;
+    max-width: 700px;
+    margin: auto;
+  }
+  #enigme h2 { margin-top: 0; }
+  #enigme input[type="text"] {
+    padding: 8px;
+    font-size: 1em;
+    width: 60%;
+  }
+  #enigme button {
+    font-size: 1em;
+    padding: 8px 15px;
+    margin-left: 10px;
+  }
+  #enigme p.error { color: #f55; }
+  #enigme p.success { color: #5f5; font-weight: bold; }
+
+  #back-button {
+    margin-top: 20px;
+    cursor: pointer;
+    color: #ddd;
+    text-decoration: underline;
+  }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+</head>
+<body>
+
+<div id="login">
+  <h1>Calendyear</h1>
+  <p>Résous cette équation pour entrer :</p>
+  <p id="equation" style="font-size: 1.5em; font-weight: bold; text-align: center; margin-bottom: 40px;">
+  \[
+    \left| \int_{a_s}^{a_{s+1}} (T_h \circ m)(x) \, dx \right|
+  \]
+  </p>
+
+  <div style="max-width:700px; margin:auto; color:#ddd; font-size:1em; line-height:1.5em; text-align: left;">
+  \[
+    m(x) = \text{nombre de nombres premiers pairs}
+  \]
+
+  \[
+    a_s = \cos(I_n) \quad \text{avec} \quad I_n \in S
+  \]
+
+  \[
+    S = \mathbb{R}
+  \]
+
+  \[
+    T_h = \sum_{n=0}^{+\infty} \left(\frac{1}{2}\right)^n y + \lim_{t \to 0} \frac{\sin(t)}{t}
+  \]
+  </div>
+
+  <input type="text" id="passwordInput" placeholder="Votre réponse" />
+  <br />
+  <button onclick="checkPassword()">Entrer</button>
+  <p id="error"></p>
+</div>
+
+
+<div id="main" style="display:none;">
+  <div id="title">Calendyear</div>
+  <div id="menu"></div>
+  <div id="enigme" style="display:none;"></div>
+</div>
+
+<script>
+const months = [
+  { name: "Octobre", theme: "Halloween", color: "#FF7518", img: "https://i.imgur.com/JjzvTfD.png", answer: "citrouille", riddle: "Je suis orange, ronde, et je veille la nuit d’Halloween. Qui suis-je ?" },
+  { name: "Novembre", theme: "Déco fait main", color: "#8B4513", img: "https://i.imgur.com/ZQZQZYo.png", answer: "crafting", riddle: "Je suis un art de créer avec les mains, souvent avec papier et colle. Quel est mon nom anglais ?" },
+  { name: "Décembre", theme: "Noël", color: "#228B22", img: "https://i.imgur.com/vJffDsd.png", answer: "sapin", riddle: "Je suis vert et décoré, présent sous le sapin à Noël. Qui suis-je ?" },
+  { name: "Janvier", theme: "Galette des rois", color: "#DAA520", img: "https://i.imgur.com/k0ZCme6.png", answer: "fève", riddle: "Je suis caché dans la galette, celui qui me trouve est roi. Qui suis-je ?" },
+  { name: "Février", theme: "St Valentin", color: "#FF1493", img: "https://i.imgur.com/oN2oA7a.png", answer: "amour", riddle: "Je suis le sentiment qui fait battre le cœur le 14 février. Qui suis-je ?" },
+  { name: "Mars", theme: "Fête des pandas roux", color: "#CD5C5C", img: "https://i.imgur.com/bMLe2Re.png", answer: "panda", riddle: "Je suis un petit mammifère roux très mignon. Qui suis-je ?" },
+  { name: "Avril", theme: "Anniversaire & Pâques", color: "#FFD700", img: "https://i.imgur.com/sHG0S2u.png", answer: "chocolat", riddle: "Je suis caché dans le jardin à Pâques et fond dans la bouche. Qui suis-je ?" },
+  { name: "Mai", theme: "Electronique", color: "#00CED1", img: "https://i.imgur.com/W7L2gfc.png", answer: "circuit", riddle: "Je connecte les composants électroniques entre eux. Qui suis-je ?" },
+  { name: "Juin", theme: "Voyage", color: "#1E90FF", img: "https://i.imgur.com/nUDTz7y.png", answer: "valise", riddle: "Je transporte tes affaires quand tu pars en voyage. Qui suis-je ?" },
+  { name: "Juillet", theme: "Anniversaire", color: "#FF4500", img: "https://i.imgur.com/Z3k7Lbk.png", answer: "gateau", riddle: "Je suis sucré et décoré avec des bougies le jour de ton anniversaire. Qui suis-je ?" },
+  { name: "Août", theme: "Été", color: "#FFA500", img: "https://i.imgur.com/yLRDeTn.png", answer: "soleil", riddle: "Je brille fort et réchauffe la plage en été. Qui suis-je ?" },
+  { name: "Septembre", theme: "Nous", color: "#6A5ACD", img: "https://i.imgur.com/kbX4ZvZ.png", answer: "famille", riddle: "Je suis les personnes que tu aimes et qui t’aiment. Qui suis-je ?" }
+];
+
+const correctAnswer = "204";
+
+function checkPassword(){
+  let val = document.getElementById("passwordInput").value.trim().toLowerCase();
+  if(val === correctAnswer){
+    document.getElementById("login").style.display = "none";
+    document.getElementById("main").style.display = "block";
+    loadMenu();
+  } else {
+    document.getElementById("error").textContent = "Mauvaise réponse, réessayez !";
+  }
+}
+
+function loadMenu(){
+  const menu = document.getElementById("menu");
+  menu.innerHTML = "";
+
+  months.forEach((month, i) => {
+    const key = "enigmeSolved_" + i;
+    const solved = localStorage.getItem(key) === "true";
+
+    const btn = document.createElement("div");
+    btn.className = "month-button";
+    btn.style.backgroundColor = month.color;
+    btn.title = month.theme;
+    btn.innerHTML = `<img src="${month.img}" alt="${month.theme}" /><div>${month.name}</div>`;
+    if(solved){
+      btn.style.boxShadow = "0 0 12px 3px #228B22"; // glow vert si résolu
+    }
+    btn.onclick = () => showRiddle(i);
+
+    menu.appendChild(btn);
+  });
+}
+
+function showRiddle(index){
+  const enigmeDiv = document.getElementById("enigme");
+  const menuDiv = document.getElementById("menu");
+
+  const month = months[index];
+
+  enigmeDiv.style.display = "block";
+  menuDiv.style.display = "none";
+
+  enigmeDiv.innerHTML = `
+    <h2>${month.name} - ${month.theme}</h2>
+    <p>${month.riddle}</p>
+    <input type="text" id="answerInput" placeholder="Votre réponse" />
+    <button onclick="checkRiddle(${index})">Valider</button>
+    <p id="riddleFeedback"></p>
+    <div id="back-button" onclick="backToMenu()">← Retour au menu</div>
+  `;
+}
+
+function checkRiddle(index){
+  const userAnswer = document.getElementById("answerInput").value.trim().toLowerCase();
+  const correct = months[index].answer.toLowerCase();
+  const feedback = document.getElementById("riddleFeedback");
+
+  if(userAnswer === correct){
+    feedback.textContent = "Bravo, énigme résolue !";
+    feedback.className = "success";
+    localStorage.setItem("enigmeSolved_" + index, "true");
+    setTimeout(() => {
+      backToMenu();
+      loadMenu();
+    }, 1500);
+  } else {
+    feedback.textContent = "Ce n’est pas la bonne réponse, réessaye.";
+    feedback.className = "error";
+  }
+}
+
+function backToMenu(){
+  document.getElementById("enigme").style.display = "none";
+  document.getElementById("menu").style.display = "flex";
+}
+</script>
+
+</body>
+</html>

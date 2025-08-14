@@ -44,7 +44,7 @@
     max-width: 700px;
     margin: auto;
   }
-  #enigme h2 { margin-top: 0; }
+  #enigme h2 { margin-top: 0; text-align:center; }
   #enigme input[type="text"] {
     padding: 8px;
     font-size: 1em;
@@ -63,6 +63,16 @@
     cursor: pointer;
     color: #ddd;
     text-decoration: underline;
+    text-align:center;
+  }
+
+  .riddle-box {
+    background: #333;
+    padding: 15px;
+    border-radius: 8px;
+    max-width: 400px;
+    margin: auto;
+    text-align: center;
   }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
@@ -84,7 +94,7 @@
   \]
 
   \[
-    a_s = \cos(I_n) \quad \text{avec} \quad I_n \in S
+    a_s = \cos(I_n) \quad \text{avec} \quad I_n \in \mathbb{R}
   \]
 
   \[
@@ -105,6 +115,7 @@
 
 <div id="main" style="display:none;">
   <div id="title">Calendyear</div>
+  <div id="progress" style="text-align:center; font-size:1.2em; margin-bottom:20px;"></div>
   <div id="menu"></div>
   <div id="enigme" style="display:none;"></div>
 </div>
@@ -127,9 +138,19 @@ const months = [
 
 const correctAnswer = "204";
 
+// Vérifie si le site est déjà déverrouillé
+window.onload = function(){
+  if(localStorage.getItem("siteUnlocked") === "true"){
+    document.getElementById("login").style.display = "none";
+    document.getElementById("main").style.display = "block";
+    loadMenu();
+  }
+};
+
 function checkPassword(){
   let val = document.getElementById("passwordInput").value.trim().toLowerCase();
   if(val === correctAnswer){
+    localStorage.setItem("siteUnlocked", "true");
     document.getElementById("login").style.display = "none";
     document.getElementById("main").style.display = "block";
     loadMenu();
@@ -142,6 +163,17 @@ function loadMenu(){
   const menu = document.getElementById("menu");
   menu.innerHTML = "";
 
+  let solvedCount = months.filter((_,i) => localStorage.getItem("enigmeSolved_" + i) === "true").length;
+  document.getElementById("progress").innerHTML = `
+    <div style="margin-bottom:10px;">Progression : ${solvedCount} / 12</div>
+    <div style="display:flex; justify-content:center; gap:5px; flex-wrap:wrap;">
+      ${months.map((_,i) => {
+        const solved = localStorage.getItem("enigmeSolved_" + i) === "true";
+        return `<div style="width:20px; height:20px; background:${solved ? '#228B22' : '#b22222'}; border-radius:4px;"></div>`;
+      }).join('')}
+    </div>
+  `;
+
   months.forEach((month, i) => {
     const key = "enigmeSolved_" + i;
     const solved = localStorage.getItem(key) === "true";
@@ -152,7 +184,7 @@ function loadMenu(){
     btn.title = month.theme;
     btn.innerHTML = `<img src="${month.img}" alt="${month.theme}" /><div>${month.name}</div>`;
     if(solved){
-      btn.style.boxShadow = "0 0 12px 3px #228B22"; // glow vert si résolu
+      btn.style.boxShadow = "0 0 12px 3px #228B22";
     }
     btn.onclick = () => showRiddle(i);
 
@@ -170,11 +202,13 @@ function showRiddle(index){
   menuDiv.style.display = "none";
 
   enigmeDiv.innerHTML = `
-    <h2>${month.name} - ${month.theme}</h2>
-    <p>${month.riddle}</p>
-    <input type="text" id="answerInput" placeholder="Votre réponse" />
-    <button onclick="checkRiddle(${index})">Valider</button>
-    <p id="riddleFeedback"></p>
+    <h2>${month.name}</h2>
+    <div class="riddle-box">
+      <p>${month.riddle}</p>
+      <input type="text" id="answerInput" placeholder="Votre réponse" />
+      <button onclick="checkRiddle(${index})">Valider</button>
+      <p id="riddleFeedback"></p>
+    </div>
     <div id="back-button" onclick="backToMenu()">← Retour au menu</div>
   `;
 }

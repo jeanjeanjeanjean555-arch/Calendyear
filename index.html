@@ -29,12 +29,27 @@
     box-shadow: 0 0 8px #222;
     transition: background-color 0.3s ease;
     position: relative;
+    overflow: hidden;
   }
   .month-button img {
     max-height: 50px;
     margin-bottom: 6px;
     border-radius: 6px;
     box-shadow: 0 0 4px black;
+  }
+  .locked {
+    filter: grayscale(100%) brightness(0.4);
+    cursor: not-allowed;
+  }
+  .lock-overlay {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2em;
   }
 
   #enigme {
@@ -121,24 +136,32 @@
 </div>
 
 <script>
+const devMode = true; // ← mettre false pour activer le blocage des mois futurs
+
 const months = [
-  { name: "Octobre", theme: "Halloween", color: "#FF7518", img: "https://i.imgur.com/JjzvTfD.png", answer: "citrouille", riddle: "Je suis orange, ronde, et je veille la nuit d’Halloween. Qui suis-je ?" },
-  { name: "Novembre", theme: "Déco fait main", color: "#8B4513", img: "https://i.imgur.com/ZQZQZYo.png", answer: "crafting", riddle: "Je suis un art de créer avec les mains, souvent avec papier et colle. Quel est mon nom anglais ?" },
-  { name: "Décembre", theme: "Noël", color: "#228B22", img: "https://i.imgur.com/vJffDsd.png", answer: "sapin", riddle: "Je suis vert et décoré, présent sous le sapin à Noël. Qui suis-je ?" },
-  { name: "Janvier", theme: "Galette des rois", color: "#DAA520", img: "https://i.imgur.com/k0ZCme6.png", answer: "fève", riddle: "Je suis caché dans la galette, celui qui me trouve est roi. Qui suis-je ?" },
-  { name: "Février", theme: "St Valentin", color: "#FF1493", img: "https://i.imgur.com/oN2oA7a.png", answer: "amour", riddle: "Je suis le sentiment qui fait battre le cœur le 14 février. Qui suis-je ?" },
-  { name: "Mars", theme: "Fête des pandas roux", color: "#CD5C5C", img: "https://i.imgur.com/bMLe2Re.png", answer: "panda", riddle: "Je suis un petit mammifère roux très mignon. Qui suis-je ?" },
-  { name: "Avril", theme: "Anniversaire & Pâques", color: "#FFD700", img: "https://i.imgur.com/sHG0S2u.png", answer: "chocolat", riddle: "Je suis caché dans le jardin à Pâques et fond dans la bouche. Qui suis-je ?" },
-  { name: "Mai", theme: "Electronique", color: "#00CED1", img: "https://i.imgur.com/W7L2gfc.png", answer: "circuit", riddle: "Je connecte les composants électroniques entre eux. Qui suis-je ?" },
-  { name: "Juin", theme: "Voyage", color: "#1E90FF", img: "https://i.imgur.com/nUDTz7y.png", answer: "valise", riddle: "Je transporte tes affaires quand tu pars en voyage. Qui suis-je ?" },
-  { name: "Juillet", theme: "Anniversaire", color: "#FF4500", img: "https://i.imgur.com/Z3k7Lbk.png", answer: "gateau", riddle: "Je suis sucré et décoré avec des bougies le jour de ton anniversaire. Qui suis-je ?" },
-  { name: "Août", theme: "Été", color: "#FFA500", img: "https://i.imgur.com/yLRDeTn.png", answer: "soleil", riddle: "Je brille fort et réchauffe la plage en été. Qui suis-je ?" },
-  { name: "Septembre", theme: "Nous", color: "#6A5ACD", img: "https://i.imgur.com/kbX4ZvZ.png", answer: "famille", riddle: "Je suis les personnes que tu aimes et qui t’aiment. Qui suis-je ?" }
+  { name: "Octobre", theme: "Halloween", color: "#FF7518", img: "https://www.hostelworld.com/blog/wp-content/uploads/2014/10/5pumpkins.jpg", answer: "vert", riddle: "La réponse est dans le coffret" },
+  { name: "Novembre", theme: "Déco fait main", color: "#8B4513", img: "https://bpifrance-creation.fr/sites/default/files/2020-02/loisisr_creatifs_670x350.jpg", answer: "4", riddle: "P62 L13 M2 : combien ?" },
+  { name: "Décembre", theme: "Noël", color: "#228B22", img: "https://www.filolit.fr/modules/prestablog/views/img/grid-for-1-7/up-img/10.jpg", answer: "", riddle: "" },
+  { name: "Janvier", theme: "Galette des rois", color: "#DAA520", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSEklcBMwFm2Kvu5u_aQMXq_fnBul9mbcXmIw&s", answer: "289", riddle: "Alors ?" },
+  { name: "Février", theme: "St Valentin", color: "#FF1493", img: "https://www.filsantejeunes.com/wp-content/uploads/2021/08/amour-vacances-dossier2-e1633359863492.jpg", answer: "sometimes", riddle: "Quel est le bon mot ?" },
+  { name: "Mars", theme: "Fête des pandas roux", color: "#CD5C5C", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRPceZA7lbo6CYfqOJ5GJJeea-6HfdaUru79w&s", answer: "43", riddle: "Combien y a-t-il de pandas roux ?" },
+  { name: "Avril", theme: "Anniversaire & Pâques", color: "#FFD700", img: "https://www.cabinetjourdan.com/wdpr/wp-content/uploads/2022/04/Fete-de-Paques.png", answer: "Ré", riddle: "Où a été prise la photo de moi ?" },
+  { name: "Mai", theme: "Electronique", color: "#00CED1", img: "https://upload.wikimedia.org/wikipedia/commons/d/d9/Arduino_ftdi_chip-1.jpg", answer: "7", riddle: "Combien de fois clignote la LED en vert ?" },
+  { name: "Juin", theme: "Voyage", color: "#1E90FF", img: "https://www.grand-est.ars.sante.fr/system/files/2023-06/Voyage%20pr%C3%A9paration.jpg", answer: "3901", riddle: "Quel est le bon numéro de l'adresse de mon hôtel?" },
+  { name: "Juillet", theme: "Anniversaire", color: "#FF4500", img: "https://www.shutterstock.com/image-illustration/joyeux-anniversaire-happy-birthday-french-260nw-1398992075.jpg", answer: "", riddle: "" },
+  { name: "Août", theme: "Été", color: "#FFA500", img: "https://dictionnaire.lerobert.com/statics/medias/images/blog/2524/top-10-mots-ete-dico-en-ligne-le-robert.jpg", answer: "PATATE", riddle: "Quel est le mot code dans la boîte ?" },
+  { name: "Septembre", theme: "Nous", color: "#6A5ACD", img: "https://m.media-amazon.com/images/I/31gOHJz5tTL._UF1000,1000_QL80_.jpg", answer: "", riddle: "" }
 ];
 
 const correctAnswer = "204";
 
-// Vérifie si le site est déjà déverrouillé
+// Mois débloqué à partir d'octobre 2025
+const startYear = 2025;
+const startMonthIndex = 0; // octobre
+const currentDate = new Date();
+const currentYear = currentDate.getFullYear();
+const currentMonth = currentDate.getMonth(); // 0 = janvier
+
 window.onload = function(){
   if(localStorage.getItem("siteUnlocked") === "true"){
     document.getElementById("login").style.display = "none";
@@ -174,19 +197,55 @@ function loadMenu(){
     </div>
   `;
 
+  const now = new Date();
+  const currentMonth = now.getMonth(); // 0 = Janvier, 9 = Octobre
+  const currentYear = now.getFullYear();
+
+  const startYear = 2025; // ton année de départ (octobre 2025)
+
   months.forEach((month, i) => {
     const key = "enigmeSolved_" + i;
     const solved = localStorage.getItem(key) === "true";
+
+    // Calcul de l'année du mois dans le cycle
+    let monthYear;
+    if (i >= 0 && i <= 2) { // Oct, Nov, Dec → année de départ
+      monthYear = startYear;
+    } else {
+      monthYear = startYear + 1;
+    }
+
+    // Mois réel correspondant
+    const realMonthIndex = (9 + i) % 12; // Oct = 9, Nov = 10, etc.
+
+    // Vérifie si le mois est débloqué
+    // Vérifie si le mois est débloqué
+    let locked = false;
+    if (!devMode) {
+      if (monthYear > currentYear || (monthYear === currentYear && realMonthIndex > currentMonth)) {
+        locked = true;
+      }
+    } else {
+      locked = false; // DEV MODE : tout débloqué
+    }
+
 
     const btn = document.createElement("div");
     btn.className = "month-button";
     btn.style.backgroundColor = month.color;
     btn.title = month.theme;
-    btn.innerHTML = `<img src="${month.img}" alt="${month.theme}" /><div>${month.name}</div>`;
-    if(solved){
-      btn.style.boxShadow = "0 0 12px 3px #228B22";
+
+    if (locked) {
+      btn.innerHTML = `<div style="position:absolute; inset:0; background:rgba(0,0,0,0.6); display:flex; align-items:center; justify-content:center; font-size:2em;">🔒</div><div>${month.name}</div>`;
+      btn.style.filter = "grayscale(100%)";
+      btn.style.cursor = "not-allowed";
+    } else {
+      btn.innerHTML = `<img src="${month.img}" alt="${month.theme}" /><div>${month.name}</div>`;
+      if(solved){
+        btn.style.boxShadow = "0 0 12px 3px #228B22";
+      }
+      btn.onclick = () => showRiddle(i);
     }
-    btn.onclick = () => showRiddle(i);
 
     menu.appendChild(btn);
   });

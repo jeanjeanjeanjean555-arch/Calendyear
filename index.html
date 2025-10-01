@@ -4,6 +4,11 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Calendyear</title>
+
+
+<!--  To reset site locally: localStorage.clear(); in console (clic droit > inspecter l'élément)
+      Then refresh page -->
+
 <style>
   body { font-family: Arial, sans-serif; background: #111; color: white; margin:0; padding:0; }
   #login, #main { padding: 20px; max-width: 800px; margin: auto; }
@@ -186,6 +191,7 @@ function loadMenu(){
   const menu = document.getElementById("menu");
   menu.innerHTML = "";
 
+  // Progression
   let solvedCount = months.filter((_,i) => localStorage.getItem("enigmeSolved_" + i) === "true").length;
   document.getElementById("progress").innerHTML = `
     <div style="margin-bottom:10px;">Progression : ${solvedCount} / 12</div>
@@ -197,38 +203,23 @@ function loadMenu(){
     </div>
   `;
 
-  const now = new Date();
-  const currentMonth = now.getMonth(); // 0 = Janvier, 9 = Octobre
-  const currentYear = now.getFullYear();
+  // === Nouvelle logique de verrouillage par date ===
+  const startYear = 2025;
+  const startMonth = 9; // Octobre (0 = Janvier)
 
-  const startYear = 2025; // ton année de départ (octobre 2025)
+  const now = new Date();
+  const monthsSinceStart = (now.getFullYear() - startYear) * 12 + (now.getMonth() - startMonth);
 
   months.forEach((month, i) => {
     const key = "enigmeSolved_" + i;
     const solved = localStorage.getItem(key) === "true";
 
-    // Calcul de l'année du mois dans le cycle
-    let monthYear;
-    if (i >= 0 && i <= 2) { // Oct, Nov, Dec → année de départ
-      monthYear = startYear;
-    } else {
-      monthYear = startYear + 1;
-    }
-
-    // Mois réel correspondant
-    const realMonthIndex = (9 + i) % 12; // Oct = 9, Nov = 10, etc.
-
-    // Vérifie si le mois est débloqué
-    // Vérifie si le mois est débloqué
     let locked = false;
     if (!devMode) {
-      if (monthYear > currentYear || (monthYear === currentYear && realMonthIndex > currentMonth)) {
-        locked = true;
+      if (i > monthsSinceStart) {
+        locked = true; // pas encore débloqué
       }
-    } else {
-      locked = false; // DEV MODE : tout débloqué
     }
-
 
     const btn = document.createElement("div");
     btn.className = "month-button";
